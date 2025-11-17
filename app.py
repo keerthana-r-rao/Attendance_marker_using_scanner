@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 # colourapp.py — Single-file Flask QR Attendance System (FINAL)
 # Hacker Theme + Popup QR Scanner (HD) + Manual Upload + Photos + Manual Mark
+=======
+# colourapp.py — corrected final version
+# Single-file Flask QR Attendance System (Hacker theme)
+>>>>>>> 246919e04716f1b176627cb8a69c88790e03e131
 # Admin: admin / 1234
 
 import os, io, csv, json
@@ -19,7 +24,11 @@ STUDENTS_CSV = os.path.join(BASE, "students.csv")
 ATTENDANCE_CSV = os.path.join(BASE, "attendance.csv")
 QRCODES_DIR = os.path.join(BASE, "qrcodes")
 PHOTOS_DIR = os.path.join(BASE, "photos")
+<<<<<<< HEAD
 ALLOWED_EXT = {"png","jpg","jpeg"}
+=======
+ALLOWED_EXT = {"png", "jpg", "jpeg"}
+>>>>>>> 246919e04716f1b176627cb8a69c88790e03e131
 
 os.makedirs(QRCODES_DIR, exist_ok=True)
 os.makedirs(PHOTOS_DIR, exist_ok=True)
@@ -69,7 +78,10 @@ def mark_attendance(sid, method="qr"):
         return False, "Unknown student"
     today = date.today().isoformat()
     df = pd.read_csv(ATTENDANCE_CSV, dtype=str).fillna("") if os.path.exists(ATTENDANCE_CSV) else pd.DataFrame()
+<<<<<<< HEAD
     # prevent duplicates today
+=======
+>>>>>>> 246919e04716f1b176627cb8a69c88790e03e131
     if not df.empty:
         if not df[(df['date']==today) & (df['id']==sid)].empty:
             return True, f"Already marked: {students[sid]['name']}"
@@ -110,7 +122,10 @@ th,td{padding:10px;border-bottom:1px dashed rgba(0,255,102,0.04);text-align:left
 <body>
 <h2>QR Attendance - Hacker Mode</h2>
 <a class='btn2' href='{{url_for("logout")}}'>Logout</a>
+<<<<<<< HEAD
 
+=======
+>>>>>>> 246919e04716f1b176627cb8a69c88790e03e131
 {{content|safe}}
 
 <!-- POPUP QR MODAL -->
@@ -134,19 +149,29 @@ th,td{padding:10px;border-bottom:1px dashed rgba(0,255,102,0.04);text-align:left
 let codeReader;
 
 function openQR(){
+<<<<<<< HEAD
+=======
+  document.getElementById('attPhoto').style.display='none';
+  document.getElementById('attInfo').innerHTML='';
+>>>>>>> 246919e04716f1b176627cb8a69c88790e03e131
   document.getElementById('qrModal').style.display='flex';
   startZXing();
 }
 
 function closeQR(){
   document.getElementById('qrModal').style.display='none';
+<<<<<<< HEAD
   if(codeReader){ codeReader.reset(); }
+=======
+  if(codeReader){ try{ codeReader.reset(); }catch(e){} }
+>>>>>>> 246919e04716f1b176627cb8a69c88790e03e131
 }
 
 function startZXing(){
   codeReader = new ZXing.BrowserMultiFormatReader();
   const videoElem = document.getElementById('qrVideo');
 
+<<<<<<< HEAD
   codeReader.decodeFromVideoDevice(null, videoElem, (result, err) => {
     if(result){
       fetch('/scan_qr_detect',{
@@ -160,6 +185,36 @@ function startZXing(){
       });
 
       closeQR();
+=======
+  // decodeFromVideoDevice will request camera permission and stream to videoElem
+  codeReader.decodeFromVideoDevice(null, videoElem, (result, err) => {
+    if (result) {
+      // result.getText() contains the QR raw text (we expect JSON with id)
+      fetch('/scan_qr_detect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qr: result.getText() })
+      })
+      .then(r => r.json())
+      .then(d => {
+          if (d.error) { alert(d.message); return; }
+
+          // fill modal area with info and photo
+          let infoHtml = "<div class='success'>" + d.message + "</div>";
+          infoHtml += "<div class='small'>Name: " + (d.name || '') + "</div>";
+          infoHtml += "<div class='small'>Roll: " + (d.roll || '') + "</div>";
+          document.getElementById('attInfo').innerHTML = infoHtml;
+
+          if (d.photo) {
+            document.getElementById('attPhoto').src = '/photo/' + d.photo;
+            document.getElementById('attPhoto').style.display = 'block';
+          }
+      })
+      .catch(e => { console.error(e); alert('Scan failed'); });
+
+      // stop scanning but keep modal open so user sees details
+      try{ codeReader.reset(); } catch(e) {}
+>>>>>>> 246919e04716f1b176627cb8a69c88790e03e131
     }
   });
 }
@@ -183,7 +238,11 @@ def login():
 
 @app.route('/logout')
 def logout():
+<<<<<<< HEAD
     session.clear();
+=======
+    session.clear()
+>>>>>>> 246919e04716f1b176627cb8a69c88790e03e131
     return redirect(url_for('login'))
 
 @app.route('/scan_qr_detect', methods=['POST'])
@@ -194,12 +253,24 @@ def scan_qr_detect():
         obj = json.loads(qrdata)
         sid = obj.get('id','')
     except Exception:
+<<<<<<< HEAD
         return jsonify({'message':'Invalid QR','name':'','roll':'','photo':''})
     ok,msg = mark_attendance(sid, method='qr')
     # return student info for popup
     students = {s['id']: s for s in load_students()}
     s = students.get(sid, {})
     return jsonify({'message':msg,'name':s.get('name',''),'roll':s.get('roll',''),'photo':s.get('photo','')})
+=======
+        return jsonify({'error': True, 'message': 'Invalid QR', 'name':'', 'roll':'', 'photo':''})
+
+    students = {s['id']: s for s in load_students()}
+    if sid not in students:
+        return jsonify({'error': True, 'message': 'Student not found', 'name':'', 'roll':'', 'photo':''})
+
+    ok,msg = mark_attendance(sid, method='qr')
+    s = students.get(sid, {})
+    return jsonify({'error': False, 'message': msg, 'id': sid, 'name': s.get('name',''), 'roll': s.get('roll',''), 'photo': s.get('photo','')})
+>>>>>>> 246919e04716f1b176627cb8a69c88790e03e131
 
 @app.route('/photo/<filename>')
 def photo_file(filename):
@@ -263,6 +334,11 @@ def home():
         for r in rows:
             html += f"<tr><td>{r['time']}</td><td>{r['id']}</td><td>{r['name']}</td><td>{r['method']}</td></tr>"
         html += "</table>"
+<<<<<<< HEAD
+=======
+    # add export PDF button
+    html += "<div style='margin-top:12px'><a class='btn' href='"+url_for('export_pdf')+"'>Export PDF</a></div>"
+>>>>>>> 246919e04716f1b176627cb8a69c88790e03e131
     html += "</div>"
 
     return render_template_string(BASE_HTML, content=html)
@@ -316,6 +392,28 @@ def add_student():
     generate_qr(sid, name)
     return redirect(url_for('home'))
 
+<<<<<<< HEAD
+=======
+@app.route('/export_pdf')
+def export_pdf():
+    if not os.path.exists(ATTENDANCE_CSV):
+        return redirect(url_for('home'))
+    df = pd.read_csv(ATTENDANCE_CSV, dtype=str).fillna("")
+    today = date.today().isoformat()
+    df_today = df[df['date'] == today]
+    if df_today.empty:
+        return redirect(url_for('home'))
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4)
+    styles = getSampleStyleSheet()
+    elems = [Paragraph(f"Attendance {today}", styles['Heading2']), Spacer(1,12)]
+    data = [list(df_today.columns)] + df_today.values.tolist()
+    elems.append(Table(data, repeatRows=1))
+    doc.build(elems)
+    buf.seek(0)
+    return send_file(buf, download_name=f"attendance_{today}.pdf", mimetype='application/pdf', as_attachment=True)
+
+>>>>>>> 246919e04716f1b176627cb8a69c88790e03e131
 # ---------------- RUN ----------------
 if __name__ == '__main__':
     ensure_students_csv()
